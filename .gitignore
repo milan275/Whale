@@ -2,3 +2,5 @@
 temp/
 test/
 vaults/
+backups/
+__pycache__/
