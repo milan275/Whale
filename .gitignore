@@ -4,3 +4,4 @@ test/
 vaults/
 backups/
 __pycache__/
+activate.bat
