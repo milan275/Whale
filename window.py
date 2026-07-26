@@ -127,7 +127,7 @@ class window(QMainWindow):
         self.animation.setDuration(250)
         self.animation.setStartValue(self.geo[0 if state=="full" else 1])
         self.animation.setEndValue(self.geo[1 if state=="full" else 0])
-        self.animation.setEasingCurve(QEasingCurve.InOutQuad) #makes start and end smooth
+        self.animation.setEasingCurve(QEasingCurve.InOutQuad) #start slow, fast in bw , end slow
 
         self.animation.finished.connect(self.showMaximized if state == "full" else self.showNormal) 
         self.animation.start()
@@ -143,7 +143,7 @@ class window(QMainWindow):
         screenGeo = self.screen().availableGeometry()
         self.x = self.winGeo.x()+self.winGeo.width()//2 # x of window's center
         self.y = screenGeo.height() #bottom
-        final = QRect(self.x,self.y,0,0) #size=0
+        final = QRect(self.x,self.y,0,0) #size=0, pos=(center,bottom)
         
         animation = QPropertyAnimation(self,b"geometry")
         animation.setDuration(250)

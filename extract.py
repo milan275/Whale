@@ -1,8 +1,8 @@
-import sys, ctypes, os, threading
+import sys,ctypes,os,threading
 from vault import vault
 from password import PasswordDialog
 
-def preload_libraries():
+def preload():
     import explorer
 
 if __name__ == "__main__":
@@ -12,10 +12,10 @@ if __name__ == "__main__":
 
     if not os.path.exists(temp_root):
         os.makedirs(temp_root)
-    ctypes.windll.kernel32.SetFileAttributesW(temp_root, 0x02 | 0x04)
+    ctypes.windll.kernel32.SetFileAttributesW(temp_root,0x02|0x04) #hide temp folder
 
-    loader_thread = threading.Thread(target=preload_libraries)
-    loader_thread.start()
+    loader = threading.Thread(target=preload)
+    loader.start()
 
     pass_win = PasswordDialog()
     password = pass_win.get_password()
@@ -23,6 +23,6 @@ if __name__ == "__main__":
     my_vault = vault(name=name, password=password,ex_dest=f'./temp/{name}')
     fake = not my_vault.extract()
 
-    loader_thread.join()
+    loader.join()
     import explorer
-    app_window = explorer.window(temp_path, name)
+    app_window = explorer.window(temp_path,name)
