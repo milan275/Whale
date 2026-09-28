@@ -18,6 +18,7 @@ class BuildThread(QThread):
     def run(self):
         try:
             p = self.params
+            os.makedirs(os.path.abspath("./vaults"), exist_ok=True)
             v = vault(name=p['name'], password=p['password'], src=p['src'],
                       fake=p['fake'] or './vaults/empty', fake_pass=p['fake_pass'])
             v.create()
