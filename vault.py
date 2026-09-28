@@ -5,7 +5,7 @@ from crypt import crypt_engine
 
 class vault:
 
-    def __init__(self,name="my_vault",password="",src="./test",dest="./vaults",ex_dest="./temp",backup="./backups",chunk_size=32000000,fake=None):
+    def __init__(self,name="my_vault",password="",src="./test",dest="./vaults",ex_dest="./temp",backup="./backups",chunk_size=32000000,fake="./vaults/empty",fake_pass=""):
 
         self.name=name
         self.password=password
@@ -14,7 +14,8 @@ class vault:
         self.ex_dest=ex_dest
         self.backup = backup
         self.chunk_size = chunk_size
-        self.fake_vault = vault(name="fake_"+name,src=fake,ex_dest=self.ex_dest) if(password) else None
+        self.fake_pass= fake_pass
+        self.fake_vault = vault(name="fake_"+name,src=fake,ex_dest=self.ex_dest,password=fake_pass) if(fake_pass) else None
 
     @staticmethod
     def get_folder(source):
@@ -83,8 +84,12 @@ class vault:
             header = ce.decrypt(whale.read(header_size))
             
             if header == ce.fake_mess:
-                self.fake_vault.extract()
-                return 0
+                if(self.fake_pass!=""):
+                    self.fake_vault.extract()
+                    return 0
+                else:
+                    return -1
+                    
             header = json.loads(header)
             def get(header,dest):
                 dest=Path(dest)

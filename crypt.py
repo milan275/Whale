@@ -4,7 +4,7 @@ from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 
 
 class crypt_engine:
-    fake_mess = b"@#ERROR~Its FaKe T!me"
+    fake_mess = b"@#ERROR~Its FaKe T!me"  
     def __init__(self, password, cs, salt=b""):
         self.password=password
         self.cs = cs

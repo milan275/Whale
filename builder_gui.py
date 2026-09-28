@@ -19,7 +19,7 @@ class BuildThread(QThread):
         try:
             p = self.params
             v = vault(name=p['name'], password=p['password'], src=p['src'],
-                      fake=p['fake'] or None)
+                      fake=p['fake'] or './vaults/empty', fake_pass=p['fake_pass'])
             v.create()
             s = Shortcut(target=p['extract_path'], args=f'"{p["name"]}"',
                          name=p['name'], icon=p['icon_path'])
@@ -91,9 +91,11 @@ class builder_form(QFrame):
         self.f_pass.entry.setEchoMode(QLineEdit.Password)
         self.f_src  = field_row("Source Folder", "", browse=True)
         self.f_fake = field_row("Fake Folder", "", browse=True)
-        self.f_dest = field_row("Vault Shortcut Destination", "", browse=True)
+        self.f_fake_pass = field_row("Fake Password", "")
+        self.f_fake_pass.entry.setEchoMode(QLineEdit.Password)
+        self.f_dest = field_row("Vault Destination", "", browse=True)
 
-        for f in [self.f_name, self.f_pass, self.f_src, self.f_fake, self.f_dest]:
+        for f in [self.f_name, self.f_pass, self.f_src, self.f_fake, self.f_fake_pass, self.f_dest]:
             lay.addWidget(f)
 
         lay.addSpacing(8)
@@ -117,14 +119,19 @@ class builder_form(QFrame):
         lay.addWidget(self.build_btn)
 
     def _start_build(self):
-        name     = self.f_name.value()
-        password = self.f_pass.value()
-        src      = self.f_src.value()
-        fake     = self.f_fake.value()
-        dest     = self.f_dest.value() or "./vaults"
+        name      = self.f_name.value()
+        password  = self.f_pass.value()
+        src       = self.f_src.value()
+        fake      = self.f_fake.value()
+        fake_pass = self.f_fake_pass.value()
+        dest      = self.f_dest.value() or "./vaults"
 
         if not name or not password or not src:
             self._set_status("Name, password and source folder are required.", "#e05555")
+            return
+
+        if fake and not fake_pass:
+            self._set_status("Fake password is required when a fake folder is set.", "#e05555")
             return
 
         extract_path = os.path.abspath("./extract.py")
@@ -136,7 +143,7 @@ class builder_form(QFrame):
 
         self._thread = BuildThread({
             'name': name, 'password': password, 'src': src,
-            'fake': fake, 'shortcut_dest': dest,
+            'fake': fake, 'fake_pass': fake_pass, 'shortcut_dest': dest,
             'extract_path': extract_path, 'icon_path': icon_path
         })
         self._thread.done.connect(self._on_done)
@@ -159,7 +166,7 @@ class window(QMainWindow):
 
     def __init__(self):
         super().__init__()
-        self.resize(480, 380)
+        self.resize(480, 420)
         self.minimized = False
         self.setAttribute(Qt.WA_TranslucentBackground)
         self.setWindowFlags(Qt.FramelessWindowHint)
