@@ -18,14 +18,14 @@ A Whale vault can also have an optional **fake password**. When the fake passwor
 
 ## Requirements
 
-- Python 3.1 or newer
+- Python 3.8 or newer
 - PySide6
 - cryptography
 
 Install the Python dependencies with:
 
 ```bash
-pip install PySide6 cryptography
+pip install -r requirements.txt
 ```
 
 ## Creating a Vault
