@@ -3,8 +3,9 @@ import sys
 import win32com.client
 
 class Shortcut:
-    def __init__(self, file_to_run, args="", name="shortcut", icon=""):
-        self.file = os.path.abspath(file_to_run)
+    def __init__(self, target="", args="", name="shortcut", icon=""):
+        if not target:return "I DONT KNOW WHICH FILE SHORTCUT WILL OPEN!"
+        self.file = os.path.abspath(target)
         self.args = args
         self.name = name
         self.icon = os.path.abspath(icon) if icon else ""

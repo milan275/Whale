@@ -3,7 +3,6 @@ from pathlib import Path
 from crypt import crypt_engine
 
 
-
 class vault:
 
     def __init__(self,name="my_vault",password="",src="./test",dest="./vaults",ex_dest="./temp",backup="./backups",chunk_size=32000000,fake=None):
@@ -66,10 +65,10 @@ class vault:
             add_content(self.src,stream)
 
 
-        #backup
-        backup_dir = Path(self.backup)
-        backup_dir.mkdir(parents=True, exist_ok=True)
-        shutil.copy2(Path(self.dest) / f"{self.name}.whale", backup_dir / f"{self.name}.whale")
+        # backup - later updates
+        # backup_dir = Path(self.backup)
+        # backup_dir.mkdir(parents=True, exist_ok=True)
+        # shutil.copy2(Path(self.dest) / f"{self.name}.whale", backup_dir / f"{self.name}.whale")
 
         if(self.fake_vault):
             self.fake_vault.create() 

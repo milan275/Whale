@@ -9,6 +9,6 @@ fake = input("Enter Path to your fake folder: ")
 my_vault = vault(name=name,password=password,src=src,fake=fake)
 my_vault.create()
 
-s = Shortcut(r"D:\PythonEnv\Whale\extract.py", args=f'"{name}"', name=name, icon="./icons/vault_icon.ico")
+s = Shortcut(target = r"D:\PythonEnv\Whale\extract.py", args=f'"{name}"', name=name, icon="./icons/vault_icon.ico")
 s.create() 
 

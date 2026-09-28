@@ -1,7 +1,8 @@
 from PySide6.QtWidgets import QApplication,QMainWindow,QFrame,QWidget,QVBoxLayout,QHBoxLayout,QPushButton,QLabel,QGraphicsOpacityEffect
 from PySide6.QtCore import Qt,QPropertyAnimation,QEasingCurve,QRect,QParallelAnimationGroup,QEvent
 from PySide6.QtGui import QPixmap
-import random
+from shatter import ShatterEngine
+
 
 class title_bar(QFrame):
 
@@ -12,7 +13,7 @@ class title_bar(QFrame):
         self.bg_color = prop['bg-color']
         self.color = prop['color']
         self.hover_color = prop['hover-color']
-        self.state = 0 #0=small 1=full screen
+        self.state = 0
         self.parent=parent
         self.layout = QHBoxLayout(self)
         self.setFixedHeight(35)
@@ -27,14 +28,13 @@ class title_bar(QFrame):
             self.logo.setStyleSheet("padding-left:10px;padding-right:0px;")
             self.layout.addWidget(self.logo)
 
-
         self.title = QLabel(title)
         self.title.setStyleSheet("padding-left:10px;font-size:14px")
         self.layout.addWidget(self.title)
         self.layout.addStretch()
 
         for option in options:
-            if option == 'X': 
+            if option == 'X':
                 butt = QPushButton('×')
                 butt.setFixedSize(35,35)
                 butt.clicked.connect(parent.shatter)
@@ -55,9 +55,8 @@ class title_bar(QFrame):
                     butt.clicked.connect(parent.minimize)
                 self.layout.addWidget(butt)
 
-        self.setEdge(borderRad) #sets initial styling + manage border rad later
+        self.setEdge(borderRad)
 
-        
     def toggle_state(self):
         if self.state == 0:
             self.parent.maximize()
@@ -82,18 +81,35 @@ class title_bar(QFrame):
                 QPushButton:hover{{background-color:red;font-weight:bold;color:white}}
                 """)
 
+    def mousePressEvent(self,event):
+        if self.state == 1:return
+        if event.button() == Qt.LeftButton:
+            self._is_tracking = True
+            self._start_pos = event.globalPosition().toPoint() - self.parent.pos()
+            event.accept()
+
+    def mouseMoveEvent(self,event):
+        if hasattr(self,'_is_tracking') and self._is_tracking:
+            self.parent.move(event.globalPosition().toPoint() - self._start_pos)
+            event.accept()
+
+    def mouseReleaseEvent(self,event):
+        if event.button() == Qt.LeftButton:
+            self._is_tracking = False
+            event.accept()
+
+
 class canvas(QFrame):
 
-    def __init__(self,options=['-','[]','X'],prop={'bg-color':'#000000','color':'white'},borderRad='8px',margins=[10]):
+    def __init__(self,prop={'bg-color':'#000000','color':'white'},borderRad='8px',margins=[10]):
 
         super().__init__()
 
         color = prop['color']
         bg_color = prop['bg-color']
-        
+
         self.layout = QVBoxLayout(self)
         self.setStyleSheet(f"color:{color};background-color:{bg_color};border:None;border-bottom-left-radius:{borderRad};border-bottom-right-radius:{borderRad};")
-
 
 
 class window(QMainWindow):
@@ -120,31 +136,31 @@ class window(QMainWindow):
         self.layout.addWidget(Canvas)
 
     def change_state_to(self,state="normal"):
-
         if state == "full":
-            self.geo = [self.geometry(),self.screen().availableGeometry()] # [size,full screen size]
-        self.animation  = QPropertyAnimation(self,b"geometry")
+            self.geo = [self.geometry(),self.screen().availableGeometry()]
+        self.animation = QPropertyAnimation(self,b"geometry")
         self.animation.setDuration(250)
         self.animation.setStartValue(self.geo[0 if state=="full" else 1])
         self.animation.setEndValue(self.geo[1 if state=="full" else 0])
-        self.animation.setEasingCurve(QEasingCurve.InOutQuad) #start slow, fast in bw , end slow
-
-        self.animation.finished.connect(self.showMaximized if state == "full" else self.showNormal) 
+        self.animation.setEasingCurve(QEasingCurve.InOutQuad)
+        self.animation.finished.connect(self.showMaximized if state == "full" else self.showNormal)
         self.animation.start()
 
     def maximize(self):
         self.change_state_to("full")
+
     def normalize(self):
         self.showNormal()
         self.setGeometry(self.geo[1])
         self.change_state_to("normal")
+
     def minimize(self):
         self.winGeo = self.geometry()
         screenGeo = self.screen().availableGeometry()
-        self.x = self.winGeo.x()+self.winGeo.width()//2 # x of window's center
-        self.y = screenGeo.height() #bottom
-        final = QRect(self.x,self.y,0,0) #size=0, pos=(center,bottom)
-        
+        self.x = self.winGeo.x()+self.winGeo.width()//2
+        self.y = screenGeo.height()
+        final = QRect(self.x,self.y,0,0)
+
         animation = QPropertyAnimation(self,b"geometry")
         animation.setDuration(250)
         animation.setStartValue(self.winGeo)
@@ -165,14 +181,12 @@ class window(QMainWindow):
         self.group.addAnimation(fade)
         self.group.finished.connect(finish_anim)
         self.group.start()
-        
 
-    def changeEvent(self, event):
+    def changeEvent(self,event):
         if event.type() == QEvent.Type.WindowStateChange:
             if not self.isMinimized() and self.minimized:
-                self.minimized = False 
+                self.minimized = False
                 self.restore_anim()
-                    
         super().changeEvent(event)
 
     def restore_anim(self):
@@ -195,60 +209,14 @@ class window(QMainWindow):
     def shatter(self,func=None):
 
         def finish():
-            for shard in self.frags:
-                shard.deleteLater()
-            self.frags.clear()
             if callable(func):
                 func()
             else:
                 self.close()
 
-        self.shatterAnimation = QParallelAnimationGroup()
-        scrn = self.grab()
-        rows,cols = 8,8
-        h,w = self.height()//rows,self.width()//cols
-        self.win.hide()
-        self.frags=[]
-        
-        for r in range(rows):
-            for c in range(cols):
+        engine = ShatterEngine(self,on_finish=finish)
+        engine.start()
 
-                #crration
-                strtGeo = QRect(w*c,h*r,w,h)
-                img = scrn.copy(strtGeo)
-                shard = QLabel(self)
-                shard.setPixmap(img)
-                shard.setGeometry(strtGeo)
-                self.frags += [shard]
-                shard.show()
-
-                #explosion
-                dx = random.randint(-250,250)
-                dy = random.randint(300,700)
-                endGeo = QRect(strtGeo.x()+dx,strtGeo.y()+dy,w,h)
-
-                geoAnimation = QPropertyAnimation(shard,b"geometry")
-                geoAnimation.setStartValue(strtGeo)
-                geoAnimation.setEndValue(endGeo)
-                geoAnimation.setEasingCurve(QEasingCurve.InQuad)
-                geoAnimation.setDuration(600)
-
-                #ghost effect
-                ghost_eff = QGraphicsOpacityEffect(shard)
-                shard.setGraphicsEffect(ghost_eff)
-                fadeAnim = QPropertyAnimation(ghost_eff,b"opacity")
-                fadeAnim.setStartValue(1)
-                fadeAnim.setEndValue(0)
-                fadeAnim.setDuration(600)
-
-                self.shatterAnimation.addAnimation(geoAnimation)
-                self.shatterAnimation.addAnimation(fadeAnim)
-
-
-        self.shatterAnimation.finished.connect(finish)
-        self.shatterAnimation.start()
-            
-        
 
 def run():
     import sys
